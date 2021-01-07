@@ -1,12 +1,36 @@
 #!/usr/bin/python
 import os, sys, getopt
 
+def create_cmakelists(projectname):
+    cmakeList = """
+
+    cmake_minimum_required(VERSION 3.15)
+    project(""",projectname,""")
+
+    enable_testing()
+    set(CMAKE_CXX_STANDARD 17)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+    add_subdirectory(bismuth)
+    add_subdirectory(game)
+    """
+
+    f = open("CMakeLists.txt", 'w')
+    f.write(cmakeList)
+    f.close()
 
 def create_project(projectname):
-    clone = "git clone git@github.com:vushu/bismuth_cpp.git"
+    clone = "git clone git@github.com:vushu/bismuth_cpp.git ."
+    deletegit = "rm -rf .git"
+    deletecmakelist = "rm CMakeLists.txt"
     os.mkdir(projectname)
     os.chdir(projectname)
     os.system(clone)
+    os.system(deletegit)
+    os.system(deletecmakelist)
+    create_cmakelists(projectname)
 
 
 def main (argv):
