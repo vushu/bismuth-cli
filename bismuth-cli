@@ -1,5 +1,8 @@
-#!/usr/bin/python
-import os, sys, getopt, shutil
+#!/usr/bin/python3
+import os, sys, getopt, shutil, requests, zipfile, io
+
+def pull_latest_bismuth():
+    os.system("cd ~/.bismuth && git checkout master && git pull")
 
 def create_make_file(projectname):
 
@@ -8,7 +11,6 @@ def create_make_file(projectname):
 
     cwd = os.getcwd();
     folder = "native"
-    print (folder)
     if not(os.path.exists("CMakeLists.txt")):
         print("Please navigate inside your project")
         return
@@ -17,12 +19,24 @@ def create_make_file(projectname):
         shutil.rmtree(folder)
     os.mkdir(folder)
     os.chdir(folder)
-    os.system("cmake .. && cd .. && ln -s ./native/compile_commands.json")
-    print("cd native && make to compile")
+    os.system("cmake ..")
+    os.chdir(cwd)
+    if not(os.path.exists("./compile_commands.json")):
+        os.system("ln -s ./native/compile_commands.json")
+    print("---- start build: cd native && make")
     # os.chdir(cwd)
     # compile_commands = os.path.join(cwd, folder, "compile_commands.json");
     # print (compile_commands)
     # os.symlink(compile_commands, cwd)
+
+def get_latest_bismuth():
+    cwd = os.getcwd()
+    clone = "git clone git@github.com:vushu/bismuth_cpp.git ~/.bismuth"
+
+    if os.path.exists("~/.bismuth"):
+        shutil.rmtree("~/.bismuth")
+    os.system(clone)
+
 
 
 def create_maincpp():
@@ -162,47 +176,125 @@ add_subdirectory(game)"""
     f.writelines(cmakeList)
     f.close()
 
+def has_native_folder():
+    return os.path.exists(os.path.join(os.getcwd(), "native"))
+
+def is_inside_project():
+    return os.path.exists(os.path.join(os.getcwd(), "bismuth"))
+
+def run_game():
+    print("---- Running game")
+    if not(os.path.exists("native")):
+        create_make_file("")
+    if not(os.path.exists(os.path.join("native", "bin"))):
+        create_make_file("")
+    cwd = os.getcwd()
+    nativefolder = os.path.join(cwd, "native")
+    os.chdir(nativefolder)
+    os.system("make")
+    print(nativefolder)
+    binfolder = os.path.join(nativefolder, "bin")
+    os.chdir(binfolder)
+    os.system("./game")
+
+def run_project():
+    if not(is_inside_project()):
+        print("bismuth folder must exist are you inside your project?")
+        return
+    elif has_native_folder():
+        run_game()
+    elif not(has_native_folder()):
+        print("---- Building game...")
+        create_make_file("")
+        run_game()
+
+
+
+
+
+def update_submodule():
+    cwdpath = os.getcwd();
+    if not(is_inside_project()):
+        print("bismuth folder must exist are you inside your project?")
+        return
+    os.chdir(os.path.join(cwdpath, "bismuth"))
+    os.system("git checkout master && git pull")
+
+
+def create_symlink(src,dest):
+    if not(os.path.exists(src)):
+        os.system("ln -s "+ src + " " + dest)
+
+
+def download_url(url, save_path):
+    r = requests.get(url)
+    z = zipfile.ZipFile(io.BytesIO(r.content))
+    z.extractall(save_path)
+
 def create_project(projectname):
-    clone = "git clone git@github.com:vushu/bismuth_cpp.git ."
-    deletegit = "rm -rf .git"
+    # repo = "git@github.com:vushu/bismuth_cpp.git ."
+    # add_submodule = "git init && git submodule add " + repo + " && git submodule init && git submodule update"
+
+    if os.path.exists(projectname):
+        print("Folder " + projectname + " already exists")
+        print("Please delete old folder or change projectname")
+        return
     os.mkdir(projectname)
+    projectcwd = os.path.join(os.getcwd(), projectname);
     os.chdir(projectname)
-    os.system(clone)
-    os.system(deletegit)
+
+    from pathlib import Path
+    home = str(Path.home())
+    bismuth_path = os.path.join(home,".bismuth")
+    if not(os.path.exists(bismuth_path)):
+        get_latest_bismuth()
+
     create_cmakelists(projectname)
-    os.mkdir("game")
-    os.chdir("game")
-    os.mkdir("src")
-    os.mkdir("resources")
-    create_game_cmakelists(projectname)
-    os.chdir("src")
-    create_maincpp()
+
+    #create_symlink("~/.bismuth/bismuth", "./bismuth")
+
+    bismuth_lib = os.path.join(home,".bismuth", "bismuth")
+    bismuth_emptygame = os.path.join(home,".bismuth","game")
+    shutil.copytree(bismuth_lib, os.path.join(projectcwd, "bismuth"))
+    shutil.copytree(bismuth_emptygame, os.path.join(projectcwd, "game"))
+
+    #create_game_cmakelists(projectname)
+    # os.chdir("src")
+
+    # create_maincpp()
+
+def print_help():
+    print("use -h for help")
+    print("use -n <projectname> to create new bismuth project")
 
 
 def main(argv):
-
-    print("use -h for help")
-    print("use -n <projectname> to create new bismuth project")
     projectname = ''
     try:
-        opts, args = getopt.getopt(argv, "hn:b:", ["nproject=", "bbuild=","build"])
+        opts, args = getopt.getopt(argv, "hburn:b:", ["help","build","update","run","nproject=", "build="])
     except getopt.GetoptError:
         sys.exit(2)
     for opt, arg in opts:
-        if opt == '-h':
-            print("To a make a new project do: bismuth-cli.py -n <projectname>")
+        if opt in ['-h', "--help"]:
+            print_help()
             sys.exit()
         elif opt in ("-n", "--nproject"):
             projectname = arg
-            print("created project: " + projectname)
+            print("---- Created project: " + projectname)
             create_project(projectname)
+            print("---- cd " + projectname + " && bismuth-cli -r")
             sys.exit()
-        elif opt in ("-b", "--bbuild"):
-            print("building project...")
+        elif opt in ['-b',"--build"]:
+            print("---- Generating Makefile...")
             create_make_file(arg)
-        elif arg in "build":
-            print("building project...")
-            create_make_file("")
+        elif opt in ("-u", "--update"):
+            print("---- Updating bismuth to latest")
+            pull_latest_bismuth()
+        elif opt in ["-r", "--run"]:
+            run_project()
+
+
+
 
 
 
