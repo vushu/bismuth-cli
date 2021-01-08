@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import os, sys, getopt, shutil, requests, zipfile, io
+import os, sys, getopt, shutil, requests
 from pathlib import Path
 
 def pull_latest_bismuth():
@@ -232,14 +232,14 @@ def download_url(url, save_path):
     z = zipfile.ZipFile(io.BytesIO(r.content))
     z.extractall(save_path)
 
-def copy_latest():
+def copy_current_bismuth():
     home = str(Path.home())
     projectcwd = os.getcwd()
     bismuth_lib = os.path.join(home,".bismuth", "bismuth")
     bismuth_emptygame = os.path.join(home,".bismuth","game")
 
     if not(os.path.exists("CMakeLists.txt")):
-        print("--- Please navigate to project folder")
+        print("--- Please navigate to your project folder")
         return
     print("--- Now copying ~/.bismuth to project")
     bismuth_local = os.path.join(projectcwd, "bismuth")
@@ -308,18 +308,12 @@ def main(argv):
             print("---- Generating Makefile...")
             create_make_file(arg)
         elif opt in ("-u", "--update"):
-            print("---- Updating your project to latest bismuth")
-            copy_latest()
+            copy_current_bismuth()
         elif opt in ["-r", "--run"]:
             run_project()
         elif opt in ["-l", "--latest"]:
             print("---- Pulling lastest bismuth to ~/.bismuth")
             pull_latest_bismuth()
-
-
-
-
-
 
 if __name__ == "__main__":
     main(sys.argv[1:])
