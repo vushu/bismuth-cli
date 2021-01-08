@@ -281,6 +281,10 @@ def create_project(projectname):
 
 def print_help():
     print("use -h for help")
+    print("use -b to build project")
+    print("use -u to update the current project to use the version in ~/.bismuth")
+    print("use -r to run project")
+    print("use -l to pulling latest to ~/.bismuth")
     print("use -n <projectname> to create new bismuth project")
 
 
