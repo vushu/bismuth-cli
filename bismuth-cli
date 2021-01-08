@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import os, sys, getopt, shutil, requests, zipfile, io
+from pathlib import Path
 
 def pull_latest_bismuth():
     os.system("cd ~/.bismuth && git checkout master && git pull")
@@ -231,6 +232,22 @@ def download_url(url, save_path):
     z = zipfile.ZipFile(io.BytesIO(r.content))
     z.extractall(save_path)
 
+def copy_latest():
+    home = str(Path.home())
+    projectcwd = os.getcwd()
+    bismuth_lib = os.path.join(home,".bismuth", "bismuth")
+    bismuth_emptygame = os.path.join(home,".bismuth","game")
+
+    if not(os.path.exists("CMakeLists.txt")):
+        print("--- Please navigate to project folder")
+        return
+    print("--- Copying latest bismuth to project")
+    bismuth_local = os.path.join(projectcwd, "bismuth")
+    if (os.path.exists("bismuth")):
+        shutil.rmtree(bismuth_local)
+    shutil.copytree(bismuth_lib, bismuth_local)
+
+
 def create_project(projectname):
     # repo = "git@github.com:vushu/bismuth_cpp.git ."
     # add_submodule = "git init && git submodule add " + repo + " && git submodule init && git submodule update"
@@ -243,7 +260,6 @@ def create_project(projectname):
     projectcwd = os.path.join(os.getcwd(), projectname);
     os.chdir(projectname)
 
-    from pathlib import Path
     home = str(Path.home())
     bismuth_path = os.path.join(home,".bismuth")
     if not(os.path.exists(bismuth_path)):
@@ -271,7 +287,7 @@ def print_help():
 def main(argv):
     projectname = ''
     try:
-        opts, args = getopt.getopt(argv, "hburn:b:", ["help","build","update","run","nproject=", "build="])
+        opts, args = getopt.getopt(argv, "hburln:b:", ["help","build","update","run","latest","nproject=", "build="])
     except getopt.GetoptError:
         sys.exit(2)
     for opt, arg in opts:
@@ -288,10 +304,13 @@ def main(argv):
             print("---- Generating Makefile...")
             create_make_file(arg)
         elif opt in ("-u", "--update"):
-            print("---- Updating bismuth to latest")
-            pull_latest_bismuth()
+            print("---- Updating your project to latest bismuth")
+            copy_latest()
         elif opt in ["-r", "--run"]:
             run_project()
+        elif opt in ["-l", "--latest"]:
+            print("---- Pulling lastest bismuth to ~/.bismuth")
+            pull_latest_bismuth()
 
 
 
