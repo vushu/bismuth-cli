@@ -241,7 +241,7 @@ def copy_latest():
     if not(os.path.exists("CMakeLists.txt")):
         print("--- Please navigate to project folder")
         return
-    print("--- Copying latest bismuth to project")
+    print("--- Now copying ~/.bismuth to project")
     bismuth_local = os.path.join(projectcwd, "bismuth")
     if (os.path.exists("bismuth")):
         shutil.rmtree(bismuth_local)
