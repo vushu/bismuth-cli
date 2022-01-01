@@ -263,6 +263,22 @@ def has_native_folder():
 def is_inside_project():
     return os.path.exists(os.path.join(os.getcwd(), "bismuth"))
 
+def run_game_test():
+    print("---- Running game")
+    if not(os.path.exists("native")):
+        create_make_file("")
+    if not(os.path.exists(os.path.join("native", "bin"))):
+        create_make_file("")
+    cwd = os.getcwd()
+    nativefolder = os.path.join(cwd, "native")
+    os.chdir(nativefolder)
+    os.system("make")
+    print(nativefolder)
+    binfolder = os.path.join(nativefolder, "bin")
+    os.chdir(binfolder)
+    os.system("./bismuth_test")
+
+
 def run_game():
     print("---- Running game")
     if not(os.path.exists("native")):
@@ -277,6 +293,17 @@ def run_game():
     binfolder = os.path.join(nativefolder, "bin")
     os.chdir(binfolder)
     os.system("./game")
+
+def run_project_test():
+    if not(is_inside_project()):
+        print("bismuth folder must exist are you inside your project?")
+        return
+    elif has_native_folder():
+        run_game_test()
+    elif not(has_native_folder()):
+        print("---- Building game...")
+        create_make_file("")
+        run_game_test()
 
 def run_project():
     if not(is_inside_project()):
@@ -376,12 +403,13 @@ def print_help():
     print("use -l to pulling latest to ~/.bismuth")
     print("use -n <projectname> to create new bismuth project")
     print("use -s <scenename> to create new bismuth scene")
+    print("use -t running bismuth_test")
 
 
 def main(argv):
     projectname = ''
     try:
-        opts, args = getopt.getopt(argv, "hburln:bs:", ["help","build","update","run","latest","nproject=", "build=", "scene="])
+        opts, args = getopt.getopt(argv, "hburltn:bs:", ["help","build","update","run","latest","test","nproject=", "build=", "scene="])
     except getopt.GetoptError:
         sys.exit(2)
     for opt, arg in opts:
@@ -404,6 +432,10 @@ def main(argv):
         elif opt in ["-l", "--latest"]:
             print("---- Pulling lastest bismuth to ~/.bismuth")
             pull_latest_bismuth()
+        elif opt in ["-t", "--test"]:
+            print("---- Running bismuth_test")
+            run_project_test()
+
         elif opt in ['-s', "--scene"]:
             if (arg == ""):
                 return print("please add a scene name")
