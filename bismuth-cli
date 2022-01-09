@@ -48,6 +48,7 @@ def confirm_scene_overwrite(file_hpp):
 
 def create_scene_cpp(scene_name, scene_file_name, fullpath):
     scene_cpp = """#include \"""",scene_file_name,""".hpp"
+using namespace scenes;
 
 """,scene_name,"""::""",scene_name,"""() {}
 
@@ -84,19 +85,21 @@ def create_scene_files(scene_name):
 
     scene_hpp = """#pragma once
 #include "bismuth/scene.hpp"
-class """,scene_name,""" : public bi::Scene {
-    public:
-        """,scene_name,"""();
-        ~""",scene_name,"""();
+namespace scenes {
+    class """,scene_name,""" : public bi::Scene {
+        public:
+            """,scene_name,"""();
+            ~""",scene_name,"""();
 
-        void init() override;
-        void start() override;
-        void processInput(float dt) override;
-        void update(float dt) override;
-        void render(float dt) override;
-        void close() override;
-    private:
-};
+            void init() override;
+            void start() override;
+            void processInput(float dt) override;
+            void update(float dt) override;
+            void render(float dt) override;
+            void close() override;
+        private:
+    };
+}
 """
     splitted = re.findall('[A-Z][^A-Z]*', scene_name)
     check_split  = "".join(splitted)
